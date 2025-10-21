@@ -1,18 +1,32 @@
 package api;
 
-import io.qameta.allure.restassured.AllureRestAssured;
+import api.user.User;
+import api.user.UserClient;
 import io.restassured.RestAssured;
+import net.datafaker.Faker;
 import org.junit.Before;
 
-public class BaseTest {
+public abstract class BaseTest {
+
+    protected final UserClient userClient = new UserClient();
+    protected final Faker faker = new Faker();
+    protected User testUser;
+    protected String accessToken;
 
     @Before
     public void setUp() {
-        // Базовый URI
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
-        // Фильтр Allure для логов REST Assured
-        RestAssured.filters(new AllureRestAssured());
+        testUser = new User(
+                faker.internet().emailAddress(),
+                "123456",
+                faker.name().firstName()
+        );
+
+        var createResponse = userClient.createUser(testUser);
+        if (createResponse.statusCode() == 200) {
+            accessToken = createResponse.then().extract().path("accessToken");
+        }
     }
 }
 

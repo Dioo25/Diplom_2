@@ -2,67 +2,84 @@ package api.user;
 
 import api.BaseTest;
 import io.qameta.allure.Description;
-import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
-import org.json.JSONObject;
+import io.qameta.allure.Step;
+import io.restassured.response.Response;
+import org.junit.Before;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
-@DisplayName("Тесты пользователей")
+@DisplayName("Тесты регистрации пользователей")
 public class UserTests extends BaseTest {
+
+    private UserClient userClient;
+    private User uniqueUser;
+    private User existingUser;
+    private User userWithoutPassword;
+
+    @Before
+    @Step("Подготовка данных пользователей перед тестами")
+    public void setUp() {
+        userClient = new UserClient();
+
+        // Уникальный пользователь (email меняется при каждом запуске)
+        uniqueUser = new User(
+                faker.internet().emailAddress(),
+                faker.internet().password(),
+                faker.name().firstName()
+        );
+
+        // Пользователь, которого зарегистрируем для проверки дубликата
+        existingUser = new User(
+                "existing" + System.currentTimeMillis() + "@mail.com",
+                "password123",
+                "John"
+        );
+        userClient.createUser(existingUser);
+
+        // Пользователь без пароля (для негативного сценария)
+        userWithoutPassword = new User(
+                faker.internet().emailAddress(),
+                "",
+                faker.name().firstName()
+        );
+    }
 
     @Test
     @DisplayName("Создание уникального пользователя")
-    @Description("Создаём уникального пользователя и проверяем успешный ответ")
+    @Description("Проверяем успешную регистрацию нового пользователя")
     public void createUniqueUser() {
-        JSONObject user = generateUser();
-        createUser(user, 200, true, null);
+        Response response = userClient.createUser(uniqueUser);
+
+        response.then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("accessToken", notNullValue());
     }
 
     @Test
-    @DisplayName("Создание пользователя, который уже зарегистрирован")
-    @Description("Проверяем, что повторная регистрация одного пользователя выдаёт ошибку")
+    @DisplayName("Создание уже зарегистрированного пользователя")
+    @Description("Проверяем ошибку при попытке повторной регистрации того же пользователя")
     public void createExistingUser() {
-        JSONObject user = generateUser();
-        createUser(user, 200, true, null); // первый раз
+        Response response = userClient.createUser(existingUser);
 
-        createUser(user, 403, false, "User already exists"); // второй раз
+        response.then()
+                .statusCode(403)
+                .body("success", equalTo(false))
+                .body("message", equalTo("User already exists"));
     }
 
     @Test
-    @DisplayName("Создание пользователя без обязательного поля (без пароля)")
-    @Description("Проверяем ошибку при отсутствии обязательного поля password")
+    @DisplayName("Создание пользователя без обязательного поля (пароля)")
+    @Description("Проверяем ошибку при регистрации без пароля")
     public void createUserWithoutPassword() {
-        JSONObject user = new JSONObject()
-                .put("email", "test" + System.currentTimeMillis() + "@mail.com")
-                .put("name", "NoPass");
+        Response response = userClient.createUser(userWithoutPassword);
 
-        createUser(user, 403, false, "Email, password and name are required fields");
-    }
-
-    @Step("Генерация уникального пользователя")
-    private JSONObject generateUser() {
-        return new JSONObject()
-                .put("email", "user" + System.currentTimeMillis() + "@mail.com")
-                .put("password", "123456")
-                .put("name", "Test User");
-    }
-
-    @Step("Создание пользователя: {user}")
-    private void createUser(JSONObject user, int expectedStatus, boolean expectedSuccess, String expectedMessage) {
-        var request = given()
-                .header("Content-type", "application/json")
-                .body(user.toString())
-                .when()
-                .post("/api/auth/register")
-                .then()
-                .statusCode(expectedStatus)
-                .body("success", equalTo(expectedSuccess));
-
-        if (expectedMessage != null) {
-            request.body("message", equalTo(expectedMessage));
-        }
+        response.then()
+                .statusCode(403)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Email, password and name are required fields"));
     }
 }

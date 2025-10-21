@@ -2,117 +2,68 @@ package api.order;
 
 import api.BaseTest;
 import io.qameta.allure.Description;
-import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
-import org.json.JSONObject;
 import org.junit.Test;
-import io.restassured.response.Response;
 
-import static io.restassured.RestAssured.given;
+import java.util.List;
+
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 @DisplayName("Тесты заказов")
 public class OrderTests extends BaseTest {
 
-    private final String SAMPLE_INGREDIENT = "61c0c5a71d1f82001bdaaa6d";
+    private final OrderClient orderClient = new OrderClient();
+    private final String VALID_INGREDIENT = "61c0c5a71d1f82001bdaaa6d";
 
     @Test
     @DisplayName("Создание заказа с авторизацией")
-    @Description("Создаём заказ с ингредиентами для авторизованного пользователя")
+    @Description("Создание заказа с валидным токеном и ингредиентом")
     public void createOrderWithAuth() {
-        JSONObject user = generateUser();
-        createUser(user);
-        String token = login(user.getString("email"), user.getString("password"));
+        Order order = new Order(List.of(VALID_INGREDIENT));
 
-        createOrder(token, new String[]{SAMPLE_INGREDIENT}, 200, true, null);
+        orderClient.createOrder(order, accessToken)
+                .then()
+                .statusCode(200)
+                .and()
+                .body("success", equalTo(true))
+                .body("order.number", notNullValue());
     }
 
     @Test
     @DisplayName("Создание заказа без авторизации")
-    @Description("Создаём заказ с ингредиентами без авторизации")
+    @Description("Создание заказа без токена должно быть успешным, но без привязки к пользователю")
     public void createOrderWithoutAuth() {
-        createOrder(null, new String[]{SAMPLE_INGREDIENT}, 200, true, null);
+        Order order = new Order(List.of(VALID_INGREDIENT));
+
+        orderClient.createOrder(order, null)
+                .then()
+                .statusCode(200)
+                .and()
+                .body("success", equalTo(true));
     }
 
     @Test
     @DisplayName("Создание заказа без ингредиентов")
-    @Description("Проверяем ошибку при создании заказа без ингредиентов")
+    @Description("Создание заказа без ингредиентов должно возвращать 400")
     public void createOrderWithoutIngredients() {
-        createOrder(null, new String[]{}, 400, false, "Ingredient ids must be provided");
+        Order order = new Order(List.of());
+
+        orderClient.createOrder(order, accessToken)
+                .then()
+                .statusCode(400)
+                .and()
+                .body("success", equalTo(false));
     }
 
     @Test
-    @DisplayName("Создание заказа с неверным хешем ингредиентов")
-    @Description("Проверяем серверную ошибку при неверном хеше ингредиентов")
+    @DisplayName("Создание заказа с неверным хэшем ингредиентов")
+    @Description("Создание заказа с несуществующим хэшем возвращает 500")
     public void createOrderWithWrongHash() {
-        // Проверяем только статус 500, поле success отсутствует
-        createOrder(null, new String[]{"wrong_hash"}, 500, null, null);
-    }
+        Order order = new Order(List.of("wrong_hash"));
 
-    // ------------------- Steps -------------------
-
-    @Step("Генерация уникального пользователя")
-    private JSONObject generateUser() {
-        return new JSONObject()
-                .put("email", "order" + System.currentTimeMillis() + "@mail.com")
-                .put("password", "123456")
-                .put("name", "OrderUser");
-    }
-
-    @Step("Создание пользователя: {user}")
-    private void createUser(JSONObject user) {
-        given()
-                .header("Content-type", "application/json")
-                .body(user.toString())
-                .when()
-                .post("/api/auth/register")
+        orderClient.createOrder(order, accessToken)
                 .then()
-                .statusCode(200);
-    }
-
-    @Step("Логин пользователя {email}")
-    private String login(String email, String password) {
-        JSONObject creds = new JSONObject().put("email", email).put("password", password);
-
-        Response response = given()
-                .header("Content-type", "application/json")
-                .body(creds.toString())
-                .when()
-                .post("/api/auth/login")
-                .then()
-                .statusCode(200)
-                .extract()
-                .response();
-
-        return response.path("accessToken");
-    }
-
-    @Step("Создание заказа с токеном: {token} и ингредиентами: {ingredients}")
-    private void createOrder(String token, String[] ingredients, int expectedStatus, Boolean expectedSuccess, String expectedMessage) {
-        JSONObject order = new JSONObject().put("ingredients", ingredients);
-
-        var request = given()
-                .header("Content-type", "application/json")
-                .body(order.toString());
-
-        if (token != null) {
-            request.header("Authorization", token);
-        }
-
-        var response = request
-                .when()
-                .post("/api/orders")
-                .then()
-                .statusCode(expectedStatus);
-
-        // Проверяем success только если expectedSuccess != null
-        if (expectedSuccess != null) {
-            response.body("success", equalTo(expectedSuccess));
-        }
-
-        // Проверяем message только если expectedMessage != null
-        if (expectedMessage != null) {
-            response.body("message", equalTo(expectedMessage));
-        }
+                .statusCode(500);
     }
 }

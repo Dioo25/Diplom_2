@@ -1,0 +1,15 @@
+# IDE
+.idea/
+*.iml
+
+# Maven
+.mvn/
+target/
+!target/allure-results/
+
+# Allure локальные файлы
+.allure/
+
+# OS
+.DS_Store
+Thumbs.db

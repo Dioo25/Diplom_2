@@ -1,23 +1,23 @@
 package api.order;
 
-import io.restassured.RestAssured;
+import api.BaseClient;
+import io.qameta.allure.Step;
 import io.restassured.response.Response;
 
-public class OrderClient {
-    private static final String BASE_URL = "https://stellarburgers.nomoreparties.site/api";
+import static io.restassured.RestAssured.given;
 
+public class OrderClient extends BaseClient {
+
+    @Step("Создание заказа")
     public Response createOrder(Order order, String token) {
+        var request = given()
+                .spec(getBaseSpec())
+                .body(order);
+
         if (token != null) {
-            return RestAssured.given()
-                    .header("Content-type", "application/json")
-                    .header("Authorization", token)
-                    .body(order)
-                    .post(BASE_URL + "/orders");
-        } else {
-            return RestAssured.given()
-                    .header("Content-type", "application/json")
-                    .body(order)
-                    .post(BASE_URL + "/orders");
+            request.header("Authorization", token);
         }
+
+        return request.post("/orders");
     }
 }

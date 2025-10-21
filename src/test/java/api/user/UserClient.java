@@ -1,22 +1,37 @@
 package api.user;
 
-import io.restassured.RestAssured;
+import api.BaseClient;
+import io.qameta.allure.Step;
 import io.restassured.response.Response;
 
-public class UserClient {
-    private static final String BASE_URL = "https://stellarburgers.nomoreparties.site/api";
+import static io.restassured.RestAssured.given;
 
-    public Response create(User user) {
-        return RestAssured.given()
-                .header("Content-type", "application/json")
+public class UserClient extends BaseClient {
+
+    @Step("Создание пользователя")
+    public Response createUser(User user) {
+        return given()
+                .spec(getBaseSpec())
                 .body(user)
-                .post(BASE_URL + "/auth/register");
+                .when()
+                .post("/auth/register");
     }
 
-    public Response login(Credentials creds) {
-        return RestAssured.given()
-                .header("Content-type", "application/json")
-                .body(creds)
-                .post(BASE_URL + "/auth/login");
+    @Step("Авторизация пользователя")
+    public Response loginUser(User user) {
+        return given()
+                .spec(getBaseSpec())
+                .body(user)
+                .when()
+                .post("/auth/login");
+    }
+
+    @Step("Удаление пользователя")
+    public void deleteUser(String token) {
+        given()
+                .spec(getBaseSpec())
+                .header("Authorization", token)
+                .when()
+                .delete("/auth/user");
     }
 }
