@@ -1,17 +1,11 @@
-# IDE
+# IntelliJ / Maven
 .idea/
+target/
 *.iml
 
-# Maven
-.mvn/
-target/
-!target/allure-results/
-/target/
-/allure-results/
-
-# Allure локальные файлы
+# Allure
+allure-results/
+allure-report/
 .allure/
 
-# OS
-.DS_Store
-Thumbs.db
+# System
