@@ -14,36 +14,48 @@ import static org.hamcrest.Matchers.notNullValue;
 @DisplayName("Тесты регистрации пользователей")
 public class UserTests extends BaseTest {
 
-    private UserClient userClient;
+    private UserClient userClientLocal;
     private User uniqueUser;
     private User existingUser;
     private User userWithoutPassword;
+    private User userWithoutEmail;
+    private User userWithoutName;
 
     @Before
     @Step("Подготовка данных пользователей перед тестами")
     public void setUp() {
-        userClient = new UserClient();
+        userClientLocal = new UserClient();
 
-        // Уникальный пользователь (email меняется при каждом запуске)
         uniqueUser = new User(
                 faker.internet().emailAddress(),
                 faker.internet().password(),
                 faker.name().firstName()
         );
 
-        // Пользователь, которого зарегистрируем для проверки дубликата
         existingUser = new User(
                 "existing" + System.currentTimeMillis() + "@mail.com",
                 "password123",
                 "John"
         );
-        userClient.createUser(existingUser);
+        // создать существующего пользователя (попытка)
+        userClientLocal.createUser(existingUser);
 
-        // Пользователь без пароля (для негативного сценария)
         userWithoutPassword = new User(
                 faker.internet().emailAddress(),
                 "",
                 faker.name().firstName()
+        );
+
+        userWithoutEmail = new User(
+                "",
+                faker.internet().password(),
+                faker.name().firstName()
+        );
+
+        userWithoutName = new User(
+                faker.internet().emailAddress(),
+                faker.internet().password(),
+                ""
         );
     }
 
@@ -51,7 +63,7 @@ public class UserTests extends BaseTest {
     @DisplayName("Создание уникального пользователя")
     @Description("Проверяем успешную регистрацию нового пользователя")
     public void createUniqueUser() {
-        Response response = userClient.createUser(uniqueUser);
+        Response response = userClientLocal.createUser(uniqueUser);
 
         response.then()
                 .statusCode(200)
@@ -61,9 +73,9 @@ public class UserTests extends BaseTest {
 
     @Test
     @DisplayName("Создание уже зарегистрированного пользователя")
-    @Description("Проверяем ошибку при попытке повторной регистрации того же пользователя")
+    @Description("Проверяем ошибку при повторной регистрации")
     public void createExistingUser() {
-        Response response = userClient.createUser(existingUser);
+        Response response = userClientLocal.createUser(existingUser);
 
         response.then()
                 .statusCode(403)
@@ -73,9 +85,33 @@ public class UserTests extends BaseTest {
 
     @Test
     @DisplayName("Создание пользователя без обязательного поля (пароля)")
-    @Description("Проверяем ошибку при регистрации без пароля")
+    @Description("Ошибка при регистрации без пароля")
     public void createUserWithoutPassword() {
-        Response response = userClient.createUser(userWithoutPassword);
+        Response response = userClientLocal.createUser(userWithoutPassword);
+
+        response.then()
+                .statusCode(403)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Email, password and name are required fields"));
+    }
+
+    @Test
+    @DisplayName("Создание пользователя без обязательного поля (email)")
+    @Description("Ошибка при регистрации без email")
+    public void createUserWithoutEmail() {
+        Response response = userClientLocal.createUser(userWithoutEmail);
+
+        response.then()
+                .statusCode(403)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Email, password and name are required fields"));
+    }
+
+    @Test
+    @DisplayName("Создание пользователя без обязательного поля (имени)")
+    @Description("Ошибка при регистрации без имени")
+    public void createUserWithoutName() {
+        Response response = userClientLocal.createUser(userWithoutName);
 
         response.then()
                 .statusCode(403)

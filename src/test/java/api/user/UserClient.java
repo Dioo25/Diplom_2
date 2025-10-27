@@ -27,8 +27,8 @@ public class UserClient extends BaseClient {
     }
 
     @Step("Удаление пользователя")
-    public void deleteUser(String token) {
-        given()
+    public Response deleteUser(String token) {
+        return given()
                 .spec(getBaseSpec())
                 .header("Authorization", token)
                 .when()

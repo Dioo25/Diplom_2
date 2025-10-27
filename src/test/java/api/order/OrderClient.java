@@ -14,7 +14,7 @@ public class OrderClient extends BaseClient {
                 .spec(getBaseSpec())
                 .body(order);
 
-        if (token != null) {
+        if (token != null && !token.isEmpty()) {
             request.header("Authorization", token);
         }
 

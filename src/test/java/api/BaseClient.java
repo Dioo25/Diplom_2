@@ -1,18 +1,24 @@
 package api;
 
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
+import io.restassured.http.ContentType;
 
 public abstract class BaseClient {
 
-    protected static final String BASE_URL = "https://stellarburgers.education-services.ru/api";
+    private static final String BASE_URI = "https://stellarburgers.education-services.ru";
+    private static final String BASE_PATH = "/api";
 
-    protected RequestSpecification getBaseSpec() {
+    protected RequestSpecification getSpec() {
         return new RequestSpecBuilder()
-                .setBaseUri(BASE_URL)
-                .addFilter(new AllureRestAssured())
-                .setContentType("application/json")
+                .setBaseUri(BASE_URI)
+                .setBasePath(BASE_PATH)
+                .setContentType(ContentType.JSON)
                 .build();
+    }
+
+    // Совместимость: некоторые клиенты вызывают getBaseSpec()
+    protected RequestSpecification getBaseSpec() {
+        return getSpec();
     }
 }

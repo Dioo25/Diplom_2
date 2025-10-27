@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class OrderTests extends BaseTest {
 
     private final OrderClient orderClient = new OrderClient();
+    // валидный ингредиент с публичного стенда (пример из документации)
     private final String VALID_INGREDIENT = "61c0c5a71d1f82001bdaaa6d";
 
     @Test
@@ -45,7 +46,7 @@ public class OrderTests extends BaseTest {
 
     @Test
     @DisplayName("Создание заказа без ингредиентов")
-    @Description("Создание заказа без ингредиентов должно возвращать 400")
+    @Description("Создание заказа без ингредиентов должно возвращать 400 и сообщение об ошибке")
     public void createOrderWithoutIngredients() {
         Order order = new Order(List.of());
 
@@ -53,7 +54,8 @@ public class OrderTests extends BaseTest {
                 .then()
                 .statusCode(400)
                 .and()
-                .body("success", equalTo(false));
+                .body("success", equalTo(false))
+                .body("message", equalTo("Ingredient ids must be provided"));
     }
 
     @Test

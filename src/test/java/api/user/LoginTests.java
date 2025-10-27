@@ -30,6 +30,20 @@ public class LoginTests extends BaseTest {
                 .then()
                 .statusCode(401)
                 .and()
-                .body("success", equalTo(false));
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
+    }
+
+    @Test
+    @DisplayName("Вход с неверным логином")
+    @Description("Проверяем ошибку при входе с неверным логином")
+    public void loginWrongEmail() {
+        User wrongEmailUser = new User("wrong_" + testUser.getEmail(), testUser.getPassword(), testUser.getName());
+        userClient.loginUser(wrongEmailUser)
+                .then()
+                .statusCode(401)
+                .and()
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
     }
 }

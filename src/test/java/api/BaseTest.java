@@ -24,8 +24,15 @@ public abstract class BaseTest {
         );
 
         var createResponse = userClient.createUser(testUser);
-        if (createResponse.statusCode() == 200) {
+        // если пользователь создан — достать accessToken
+        if (createResponse != null && createResponse.statusCode() == 200) {
             accessToken = createResponse.then().extract().path("accessToken");
+        } else {
+            // Если уже создан (403) — попытаться залогиниться и получить токен
+            var loginResponse = userClient.loginUser(testUser);
+            if (loginResponse != null && loginResponse.statusCode() == 200) {
+                accessToken = loginResponse.then().extract().path("accessToken");
+            }
         }
     }
 }
