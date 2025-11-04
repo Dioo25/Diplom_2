@@ -1,24 +1,15 @@
 package api;
 
 import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.specification.RequestSpecification;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 
-public abstract class BaseClient {
+public class BaseClient {
 
-    private static final String BASE_URI = "https://stellarburgers.education-services.ru";
-    private static final String BASE_PATH = "/api";
-
-    protected RequestSpecification getSpec() {
+    protected RequestSpecification getBaseSpec() {
         return new RequestSpecBuilder()
-                .setBaseUri(BASE_URI)
-                .setBasePath(BASE_PATH)
+                .setBaseUri("https://stellarburgers.education-services.ru/api")
                 .setContentType(ContentType.JSON)
                 .build();
-    }
-
-    // Совместимость: некоторые клиенты вызывают getBaseSpec()
-    protected RequestSpecification getBaseSpec() {
-        return getSpec();
     }
 }

@@ -9,3 +9,4 @@ allure-report/
 .allure/
 
 # System
+.DS_Store
