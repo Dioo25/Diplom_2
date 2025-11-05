@@ -1,0 +1,22 @@
+# IntelliJ / Maven
+.idea/
+*.iml
+
+
+target/*
+
+!target/site/
+!target/site/allure-results/
+!target/site/allure-results/**
+
+
+target/site/allure-report/
+target/site/allure-maven-plugin/
+
+# Allure
+allure-report/
+.allure/
+
+# System
+.DS_Store
+Thumbs.db
